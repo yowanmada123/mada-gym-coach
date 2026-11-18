@@ -241,11 +241,7 @@ void main() {
 
     // gulir seluruh tab untuk memastikan tidak ada overflow
     for (var i = 0; i < 10; i++) {
-      await tester.drag(
-        diaryList,
-        const Offset(0, -500),
-        warnIfMissed: false,
-      );
+      await tester.drag(diaryList, const Offset(0, -500), warnIfMissed: false);
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.text('7 Hari Terakhir'), findsOneWidget);

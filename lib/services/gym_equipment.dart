@@ -49,9 +49,45 @@ final _oldMachine = RegExp(
   r'leg extension|leg curl|leg press|butterfly|bicycl|bike|treadmill|walking, treadmill',
 );
 
+/// Gerakan beban tubuh yang tetap butuh alat (palang, bench, pengait kaki),
+/// sehingga tidak bisa dilakukan hanya dengan matras di rumah.
+const kHomeNeedsGear = {
+  'pullup',
+  'chinup',
+  'inverted_row',
+  'chest_dips',
+  'tri_dips',
+  'bench_dips',
+  'back_ext',
+  'dead_hang',
+  'hanging_leg_raise',
+  'incline_pushup',
+  'decline_pushup',
+  'decline_crunch',
+  'sissy_squat',
+  'nordic',
+};
+
+/// Gerakan non-bodyweight yang cukup memakai perabot rumah (kursi).
+const kHomeHousehold = {'chair_upper_stretch', 'chair_lower_back_stretch'};
+
+final _homeGearWords = RegExp(
+  r'bench|bar\b|pull-?up|chin-?up|dip|hanging|ball|box|step|rope|towel|'
+  r'band|partner|machine|cable|plate|suspension|ring',
+  caseSensitive: false,
+);
+
+bool _availableAtHome(Exercise e) {
+  if (kHomeHousehold.contains(e.id)) return true;
+  if (e.equipment != Equipment.bodyweight) return false;
+  if (e.curated) return !kHomeNeedsGear.contains(e.id);
+  return !_homeGearWords.hasMatch(e.name);
+}
+
 /// Apakah gerakan ini bisa dilakukan dengan alat di jenis gym tersebut.
 bool availableAtGym(Exercise e, GymType gym) {
   if (gym == GymType.modern) return true;
+  if (gym == GymType.home) return _availableAtHome(e);
   if (_specialBars.contains(e.id)) return false;
   switch (e.equipment) {
     case Equipment.barbell:

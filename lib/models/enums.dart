@@ -225,6 +225,15 @@ enum GymType {
       'Butterfly',
       'Sepeda statis & treadmill',
     ],
+  ),
+  home(
+    'Di Rumah / Tanpa Alat',
+    'Latihan di rumah, kos, atau di mana saja — cukup matras & lantai. '
+        'Hanya beban tubuh: push-up, squat, lunge, plank, core & kardio ringan. '
+        'Tanpa barbell, dumbbell, palang, atau mesin.',
+    Icons.home_outlined,
+    ['Pushups', 'Bodyweight_Squat', 'Plank', 'Single_Leg_Glute_Bridge'],
+    ['Matras', 'Lantai & dinding', 'Beban tubuh', 'Kursi (opsional)'],
   );
 
   const GymType(this.label, this.desc, this.icon, this.images, this.equipment);

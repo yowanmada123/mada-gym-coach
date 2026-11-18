@@ -325,7 +325,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     ),
                   if (gym != GymType.modern)
                     _chip(
-                      '🏚️ Ada di ${gym.label}',
+                      gym == GymType.home
+                          ? '🏠 Tanpa alat'
+                          : '🏚️ Ada di ${gym.label}',
                       _gymOnly,
                       () => setState(() => _gymOnly = !_gymOnly),
                     ),

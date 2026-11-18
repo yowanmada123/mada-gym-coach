@@ -73,7 +73,19 @@ void main() {
                             ),
                           )
                           .length;
-                      if (d.type != DayType.conditioning &&
+                      if (gym == GymType.home) {
+                        for (final pe in d.exercises) {
+                          final ex = kExerciseById[pe.exerciseId]!;
+                          expect(
+                            ex.equipment == Equipment.bodyweight ||
+                                kHomeHousehold.contains(ex.id),
+                            isTrue,
+                            reason: '${ex.name} butuh alat (mode rumah)',
+                          );
+                        }
+                      }
+                      if (gym != GymType.home &&
+                          d.type != DayType.conditioning &&
                           d.type != DayType.recovery) {
                         final addOns = d.mainExercises
                             .where(

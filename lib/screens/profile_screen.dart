@@ -105,7 +105,7 @@ class ProfileScreen extends StatelessWidget {
                       .map((d) => kDayShort[d - 1])
                       .join(', '),
                 ),
-                row(p.gymType.icon, 'Tipe gym', p.gymType.label),
+                row(p.gymType.icon, 'Tempat latihan', p.gymType.label),
                 row(
                   Icons.healing_outlined,
                   'Cedera',

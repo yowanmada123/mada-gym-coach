@@ -45,7 +45,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     'Kondisi Badan Saat Ini',
     'Target Bentuk Badan',
     'Jadwal Gym',
-    'Tipe Gym',
+    'Tempat Latihan',
     'Cedera & Keterbatasan',
     'Ringkasan',
   ];
@@ -492,7 +492,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // ───────────── Step 6: tipe gym ─────────────
   Widget _stepGym() {
     return _scaffoldStep(
-      'Di gym seperti apa kamu berlatih? Jadwal hanya akan memakai alat yang biasanya tersedia.',
+      'Di mana kamu berlatih? Jadwal hanya akan memakai alat yang biasanya tersedia — '
+      'atau tanpa alat sama sekali bila latihan di rumah.',
       [
         for (final g in GymType.values)
           _GymCard(
@@ -630,7 +631,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 'Jadwal',
                 '$days (${p.trainingDays.length} hari)',
               ),
-              row(p.gymType.icon, 'Tipe gym', p.gymType.label),
+              row(p.gymType.icon, 'Tempat latihan', p.gymType.label),
               row(
                 Icons.healing_outlined,
                 'Cedera',

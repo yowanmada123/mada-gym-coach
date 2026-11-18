@@ -131,10 +131,14 @@ class ExerciseDetailScreen extends StatelessWidget {
             _Warn(
               color: Colors.amber,
               icon: Icons.fitness_center,
-              title: 'Alat jarang tersedia di ${gym.label}',
-              body:
-                  'Gerakan ini butuh ${e.equipment.label.toLowerCase()} yang umumnya tidak ada di gym '
-                  'jadul. Cari variasi barbell/dumbbell dengan pola gerak yang sama.',
+              title: gym == GymType.home
+                  ? 'Butuh alat — tidak cocok untuk latihan di rumah'
+                  : 'Alat jarang tersedia di ${gym.label}',
+              body: gym == GymType.home
+                  ? 'Gerakan ini butuh alat (${e.equipment.label.toLowerCase()}, palang, atau bench). '
+                        'Cari variasi beban tubuh dengan pola gerak yang sama.'
+                  : 'Gerakan ini butuh ${e.equipment.label.toLowerCase()} yang umumnya tidak ada di gym '
+                        'jadul. Cari variasi barbell/dumbbell dengan pola gerak yang sama.',
             ),
           ],
           const SectionTitle('Otot yang dilatih'),

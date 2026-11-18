@@ -94,6 +94,9 @@ const kSeatedFriendly = {
   'seated_battle_rope', 'seated_shadow_boxing', 'arm_circles', 'chest_stretch',
   'lat_stretch', 'triceps_stretch', 'spinal_stretch', 'chair_upper_stretch',
   'seated_overhead_stretch', 'chair_lower_back_stretch',
+  // di rumah / tanpa alat (duduk di kursi atau berbaring di matras)
+  'seated_pushup', 'chest_squeeze', 'prone_y_raise', 'reverse_snow_angel',
+  'prone_t_raise', 'superman_pull',
 };
 
 /// Kardio/latihan yang berbenturan (lari, lompat, naik tangga, mendorong sled).

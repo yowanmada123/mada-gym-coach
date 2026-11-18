@@ -112,14 +112,41 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       items.fold(0, (a, i) => a + i.done.where((d) => d).length);
   int get _totalSets => items.fold(0, (a, i) => a + i.done.length);
 
+  /// Jumlah set yang sudah dicentang = indeks set berikutnya yang boleh
+  /// dicentang (set selalu diselesaikan berurutan).
+  int _nextSet(_Item item) => item.done.where((d) => d).length;
+
   void _toggle(_Item item, int index) {
+    final next = _nextSet(item);
+    final isNext = index == next;
+    final isLastDone = index == next - 1;
+    if (!isNext && !isLastDone) {
+      HapticFeedback.lightImpact();
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 2),
+            content: Text(
+              index > next
+                  ? 'Selesaikan Set ${next + 1} dulu'
+                  : 'Batalkan dari Set $next (set terakhir) dulu',
+            ),
+          ),
+        );
+      return;
+    }
     setState(() {
-      item.done[index] = !item.done[index];
-      if (item.done[index] &&
-          item.planned.restSec > 0 &&
-          item.done.contains(false)) {
-        _restTotal = item.planned.restSec;
-        _restLeft = item.planned.restSec;
+      if (isNext) {
+        item.done[index] = true;
+        if (item.planned.restSec > 0 && item.done.contains(false)) {
+          _restTotal = item.planned.restSec;
+          _restLeft = item.planned.restSec;
+        }
+      } else {
+        // Batal centang (misal salah tekan) → hentikan timer istirahatnya.
+        item.done[index] = false;
+        _restLeft = 0;
       }
     });
     HapticFeedback.selectionClick();
@@ -460,9 +487,19 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                     width: i.done.length == 1 ? 120 : 52,
                     height: 40,
                     alignment: Alignment.center,
+                    foregroundDecoration: s > _nextSet(i)
+                        ? BoxDecoration(
+                            // Set yang belum boleh dicentang tampil redup.
+                            color: kBg.withValues(alpha: .55),
+                            borderRadius: BorderRadius.circular(10),
+                          )
+                        : null,
                     decoration: BoxDecoration(
                       color: i.done[s] ? kAccent : kSurface2,
                       borderRadius: BorderRadius.circular(10),
+                      border: s == _nextSet(i)
+                          ? Border.all(color: kAccent.withValues(alpha: .7))
+                          : null,
                     ),
                     child: i.done[s]
                         ? const Icon(Icons.check, color: Colors.black, size: 20)

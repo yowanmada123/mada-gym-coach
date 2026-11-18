@@ -101,6 +101,11 @@ class PlanGenerator {
   bool get _upperOnly => _limit == LowerBodyLimit.upperOnly;
   bool get _reduceLegs => _limit == LowerBodyLimit.reduce;
   bool get _oldGym => p.gymType == GymType.oldSchool;
+  bool get _home => p.gymType == GymType.home;
+
+  /// Gerakan tanpa alat diposisikan sebagai pelengkap — kecuali latihan di
+  /// rumah, di mana semua gerakan memang beban tubuh.
+  bool _isAddOn(Exercise e) => !_home && e.isBodyweightAddOn;
 
   /// Hindari kardio berbenturan (badan berat atau keterbatasan kaki).
   bool get _lowImpact => _heavyBody || _limit != LowerBodyLimit.none;
@@ -239,7 +244,7 @@ class PlanGenerator {
 
   List<_Slot> _template(DayType t, int variant) {
     final base = _baseTemplate(t, variant);
-    if (_limit == LowerBodyLimit.none && !_oldGym) return base;
+    if (_limit == LowerBodyLimit.none && !_oldGym && !_home) return base;
     // Pengganti slot yang dilewati (kaki / alat tak tersedia): core & aksesori tubuh atas.
     final fillers = variant.isOdd
         ? [_coreRot, _rearDelt, _hammer, _coreFlex, _latRaise, _ohExt, _hPull]
@@ -541,6 +546,19 @@ class PlanGenerator {
       case Intensity.moderate:
         break;
     }
+    if (_home) {
+      // Beban tubuh: repetisi lebih tinggi & istirahat lebih singkat.
+      final strengthy =
+          p.target == TargetBody.strength || p.target == TargetBody.athletic;
+      return _Scheme(
+        cSets,
+        strengthy ? '6–10 rep (variasi tersulit)' : '10–15 rep',
+        min(cRest, 90),
+        iSets,
+        '12–20 rep',
+        min(iRest, 60),
+      );
+    }
     return _Scheme(cSets, s.cReps, cRest, iSets, s.iReps, iRest);
   }
 
@@ -572,7 +590,7 @@ class PlanGenerator {
   /// Prioritaskan alat (mesin, cable, dumbbell, barbell); gerakan tanpa alat
   /// hanya dipilih bila tidak ada alternatif berbasis alat untuk slot tsb.
   double _bodyweightPenalty(Exercise e) {
-    if (!e.isBodyweightAddOn) return 0;
+    if (!_isAddOn(e)) return 0;
     if (_corePats.contains(e.pattern)) return 1.5;
     if (p.experience == ExperienceLevel.advanced &&
         (e.pattern == Pat.vPull || e.pattern == Pat.triPress)) {
@@ -653,6 +671,8 @@ class PlanGenerator {
   List<PlannedExercise> _warmup(DayType t) {
     final cardioIds = _upperOnly
         ? ['seated_shadow_boxing']
+        : _home
+        ? ['march_in_place']
         : _reduceLegs
         ? ['recumbent_bike', 'stationary_bike', 'seated_shadow_boxing']
         : [
@@ -681,8 +701,8 @@ class PlanGenerator {
         : (_reduceLegs
               ? ['cat_cow', 'arm_circles', 'hip_circles']
               : ['worlds_greatest', 'arm_circles', 'hip_circles']);
-    // Gym jadul jarang punya resistance band → ganti peregangan tulang belakang.
-    if (_oldGym) {
+    // Gym jadul / rumah jarang punya resistance band → ganti peregangan tulang belakang.
+    if (_oldGym || _home) {
       for (var i = 0; i < mob.length; i++) {
         if (mob[i] == 'band_pull_apart') mob[i] = 'spinal_stretch';
       }
@@ -719,7 +739,11 @@ class PlanGenerator {
           ]
         : switch (t) {
             DayType.push => ['chest_stretch', 'triceps_stretch', 'lat_stretch'],
-            DayType.pull => ['lat_stretch', 'cat_cow', 'foam_roll_back'],
+            DayType.pull => [
+              'lat_stretch',
+              'cat_cow',
+              _home ? 'childs_pose' : 'foam_roll_back',
+            ],
             DayType.legs || DayType.lower => [
               'hamstring_stretch',
               'hip_flexor_stretch',
@@ -793,7 +817,11 @@ class PlanGenerator {
         p.experience != ExperienceLevel.beginner &&
         (p.target == TargetBody.athletic || p.target == TargetBody.fatLoss) &&
         p.intensity != Intensity.light;
-    final ids = hiit
+    final ids = _home
+        ? (hiit
+              ? ['burpee', 'mountain_climber', 'jumping_jack', 'fast_skipping']
+              : ['march_in_place'])
+        : hiit
         ? ['bike_hiit', 'battle_rope', 'jump_rope']
         : _reduceLegs
         ? ['recumbent_bike', 'stationary_bike']
@@ -849,6 +877,8 @@ class PlanGenerator {
       final liss =
           (_upperOnly
                   ? ['seated_shadow_boxing']
+                  : _home
+                  ? ['march_in_place']
                   : _reduceLegs
                   ? ['recumbent_bike', 'stationary_bike']
                   : [
@@ -887,7 +917,7 @@ class PlanGenerator {
       for (final slot in list) {
         final ex = _pick(slot, usedDay, eqCount, usedPats);
         if (ex == null) continue;
-        if (pass == 0 && ex.isBodyweightAddOn) {
+        if (pass == 0 && _isAddOn(ex)) {
           deferred.add(slot);
           continue;
         }
@@ -944,11 +974,11 @@ class PlanGenerator {
     // Gerakan dengan alat dulu, gerakan tanpa alat sebagai pelengkap di akhir.
     final withGear = [
       for (final pe in main)
-        if (!kExerciseById[pe.exerciseId]!.isBodyweightAddOn) pe,
+        if (!_isAddOn(kExerciseById[pe.exerciseId]!)) pe,
     ];
     final addOns = [
       for (final pe in main)
-        if (kExerciseById[pe.exerciseId]!.isBodyweightAddOn) pe,
+        if (_isAddOn(kExerciseById[pe.exerciseId]!)) pe,
     ];
     main
       ..clear()
@@ -987,7 +1017,7 @@ class PlanGenerator {
         }
         if (_reduceLegs && isLowerBodyExercise(ex) && pe.sets >= 3) continue;
         // Pelengkap tanpa alat cukup 3 set, kecuali tidak ada gerakan lain.
-        if (ex.isBodyweightAddOn && pe.sets >= 3 && !addOnExtra) continue;
+        if (_isAddOn(ex) && pe.sets >= 3 && !addOnExtra) continue;
         final extra = 40 + pe.restSec;
         if (used + extra > budget) continue;
         pe.sets += 1;
@@ -1043,7 +1073,11 @@ class PlanGenerator {
         'Gerakan berisiko untuk cedera ${p.injuries.map((e) => e.label).join(', ')} sudah dihindari otomatis. Hentikan latihan bila terasa nyeri tajam.',
       'Skema utama: ${s.cSets} set × ${s.cReps} (istirahat ${s.cRest} dtk) untuk gerakan compound, '
           '${s.iSets} set × ${s.iReps} untuk isolasi. Intensitas ${p.intensity.label}: ${p.intensity.desc}.',
-      'Progressive overload: jika semua set mencapai batas atas repetisi, naikkan beban 2,5–5% minggu berikutnya.',
+      if (_home)
+        'Progressive overload tanpa alat: bila semua set mencapai batas atas repetisi, naikkan ke variasi '
+            'lebih sulit (mis. push-up lutut → push-up → diamond), perlambat tempo turun 3 detik, atau tambah 1 set.'
+      else
+        'Progressive overload: jika semua set mencapai batas atas repetisi, naikkan beban 2,5–5% minggu berikutnya.',
       'Nutrisi: target ±${p.targetCalories} kkal/hari dan protein ±${p.proteinGrams} g/hari.',
       if (_finisherMinutes > 0)
         'Kardio finisher $_finisherMinutes menit ditambahkan di akhir sesi untuk mendukung target ${p.target.label}.',
@@ -1060,6 +1094,9 @@ class PlanGenerator {
         'Gym Mojopahit: program hanya memakai alat klasik — barbell, dumbbell, bench, rak squat, '
             'pull-up/dip bar, pulley lat pulldown/row, leg extension/curl & leg press. '
             'Bila ada alat yang tidak tersedia, tekan gerakan di jadwal untuk menggantinya.',
+      if (_home)
+        'Latihan di rumah: semua gerakan cukup memakai beban tubuh di atas matras (kursi kokoh opsional). '
+            'Otot bisep sulit dilatih langsung tanpa alat — sudah terlatih lewat gerakan tarik di punggung.',
       if (_heavyBody && !_upperOnly)
         'Lompatan & kardio high-impact dihindari untuk menjaga sendi lutut dan pergelangan kaki.',
       if (n >= 6)
